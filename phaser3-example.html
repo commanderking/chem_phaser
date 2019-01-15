@@ -28,6 +28,7 @@
         this.load.image("red", "assets/particles/red.png");
       }
       function create() {
+        console.log("this", this);
         this.add.image(400, 300, "sky");
         var particles = this.add.particles("red");
         var emitter = particles.createEmitter({
@@ -35,11 +36,28 @@
           scale: { start: 1, end: 0 },
           blendMode: "ADD"
         });
-        var logo = this.physics.add.image(400, 100, "logo");
-        logo.setVelocity(100, 200);
-        logo.setBounce(1, 1);
-        logo.setCollideWorldBounds(true);
-        emitter.startFollow(logo);
+        var logo = this.add.image(400, 100, "logo");
+
+        var ellipse = new Phaser.Geom.Ellipse(400, 300, 100, 100);
+
+        var graphics = this.add
+          .graphics({ fillStyle: { color: 0xff0000 } })
+          .fillEllipseShape(ellipse, 64);
+        // .fillEllipseShape(ellipse, 64);
+
+        graphics.generateTexture("circleTexture");
+        var circleSprite = this.add.sprite(300, 400, "circleTexture");
+
+        console.log("circleTexture", circleSprite);
+        graphics.destroy();
+
+        circleSprite.setInteractive();
+        this.input.setDraggable(circleSprite);
+
+        this.input.on("drag", function(pointer, gameObject, dragX, dragY) {
+          gameObject.x = dragX;
+          gameObject.y = dragY;
+        });
       }
     </script>
   </body>
