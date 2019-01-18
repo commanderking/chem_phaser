@@ -21,45 +21,69 @@ var config = {
 var game = new Phaser.Game(config);
 function preload() {}
 function create() {
-  var chlorineAtom = new Phaser.Geom.Ellipse(50, 50, 100, 100);
+  const renderAtom = ({ name, color, diameter, startPosition, draggable }) => {
+    const atom = new Phaser.Geom.Ellipse(
+      diameter / 2,
+      diameter / 2,
+      diameter,
+      diameter
+    );
 
-  var chlroineGraphics = this.add
-    .graphics({ fillStyle: { color: 0xff0000 } })
-    .fillEllipseShape(chlorineAtom, 64);
+    const atomGraphics = this.add
+      .graphics({ fillStyle: { color } })
+      .fillEllipseShape(atom, 64);
 
-  chlroineGraphics.generateTexture("circleTexture", 100, 100);
-  var chlorineSprite = this.add.sprite(300, 300, "circleTexture");
+    atomGraphics.generateTexture(name, diameter, diameter);
+    const atomSprite = this.add.sprite(startPosition.x, startPosition.y, name);
 
-  chlorineSprite.setInteractive();
-  this.input.setDraggable(chlorineSprite);
+    if (draggable) {
+      atomSprite.setInteractive();
+      this.input.setDraggable(atomSprite);
+    }
+    atomGraphics.destroy();
+    atomSprite.name = name;
+    return atomSprite;
+  };
 
-  chlroineGraphics.destroy();
+  const chlorineAtom = renderAtom({
+    name: "chlorineAtom",
+    color: 0xff0000,
+    diameter: 100,
+    startPosition: {
+      x: 300,
+      y: 300
+    },
+    draggable: false
+  });
 
-  var sodiumAtom = new Phaser.Geom.Ellipse(
-    25,
-    25,
-    elements.sodium.diameter,
-    elements.sodium.diameter
-  );
+  const fluorine = renderAtom({
+    name: "fluorine",
+    color: 0x9400d3,
+    diameter: 75,
+    startPosition: {
+      x: 200,
+      y: 200
+    },
+    draggable: true
+  });
 
-  var sodiumGraphics = this.add
-    .graphics({ fillStyle: { color: 0xffffff } })
-    .fillEllipseShape(sodiumAtom, 64);
-
-  sodiumGraphics.generateTexture(
-    "sodiumAtomTexture",
-    elements.sodium.diameter,
-    elements.sodium.diameter
-  );
-  var sodiumAtomSprite = this.add.sprite(100, 100, "sodiumAtomTexture");
-
-  sodiumAtomSprite.setInteractive();
-  sodiumAtomSprite.name = "sodiumAtomSprite";
-  this.input.setDraggable(sodiumAtomSprite);
+  const sodium = renderAtom({
+    name: "sodiumAtomSprite",
+    color: 0xffffff,
+    diameter: elements.sodium.diameter,
+    startPosition: {
+      x: 100,
+      y: 100
+    },
+    draggable: true
+  });
 
   this.input.on("drag", function(pointer, gameObject, dragX, dragY) {
     console.log(gameObject.name === "sodiumAtomSprite");
-    if (gameObject.name === "sodiumAtomSprite") {
+    if (
+      gameObject.name === "sodiumAtomSprite" ||
+      gameObject.name === "fluorine"
+    ) {
       gameObject.x = dragX;
       gameObject.y = dragY;
     }
@@ -69,6 +93,4 @@ function create() {
 
     console.log("gameObject", gameObject.name);
   });
-
-  sodiumGraphics.destroy();
 }
