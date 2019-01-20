@@ -19,9 +19,10 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
+var text;
 function preload() {}
 function create() {
-  const renderAtom = ({ name, color, diameter, startPosition, draggable }) => {
+  const renderAtom = ({ name, color, diameter }) => {
     const atom = new Phaser.Geom.Ellipse(
       diameter / 2,
       diameter / 2,
@@ -34,63 +35,88 @@ function create() {
       .fillEllipseShape(atom, 64);
 
     atomGraphics.generateTexture(name, diameter, diameter);
-    const atomSprite = this.add.sprite(startPosition.x, startPosition.y, name);
-
-    if (draggable) {
-      atomSprite.setInteractive();
-      this.input.setDraggable(atomSprite);
-    }
     atomGraphics.destroy();
-    atomSprite.name = name;
-    return atomSprite;
   };
 
-  const chlorineAtom = renderAtom({
-    name: "chlorineAtom",
+  const chlorine = renderAtom({
+    name: "chlorine",
     color: 0xff0000,
-    diameter: 100,
-    startPosition: {
-      x: 300,
-      y: 300
-    },
-    draggable: false
+    diameter: 100
   });
 
   const fluorine = renderAtom({
     name: "fluorine",
     color: 0x9400d3,
-    diameter: 75,
-    startPosition: {
-      x: 200,
-      y: 200
-    },
-    draggable: true
+    diameter: 75
   });
 
   const sodium = renderAtom({
-    name: "sodiumAtomSprite",
+    name: "sodium",
     color: 0xffffff,
-    diameter: elements.sodium.diameter,
-    startPosition: {
-      x: 100,
-      y: 100
+    diameter: elements.sodium.diameter
+  });
+
+  this.atoms = this.add.group([
+    {
+      key: "sodium",
+      setXY: {
+        x: 100,
+        y: 300
+      }
     },
-    draggable: true
-  });
-
-  this.input.on("drag", function(pointer, gameObject, dragX, dragY) {
-    console.log(gameObject.name === "sodiumAtomSprite");
-    if (
-      gameObject.name === "sodiumAtomSprite" ||
-      gameObject.name === "fluorine"
-    ) {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
+    {
+      key: "fluorine",
+      setXY: {
+        x: 200,
+        y: 200
+      }
+    },
+    {
+      key: "chlorine",
+      setXY: {
+        x: 300,
+        y: 300
+      }
     }
+  ]);
 
-    state.atomX = dragX;
-    state.atomY = dragY;
+  Phaser.Actions.Call(
+    this.atoms.getChildren(),
+    function(item) {
+      item.setInteractive();
+      this.input.setDraggable(item);
+      item.on("drag", function(pointer, dragX, dragY) {
+        item.x = dragX;
+        item.y = dragY;
 
-    console.log("gameObject", gameObject.name);
+        state.atomX = dragX;
+        state.atomY = dragY;
+      });
+    },
+    this
+  );
+
+  var config1 = {
+    x: 200,
+    y: 200,
+    text: "Cl",
+    style: {
+      fontSize: "12px",
+      fontFamily: "Arial",
+      color: "#ffffff",
+      align: "center"
+    }
+  };
+
+  secondText = this.make.text(config1);
+
+  var text = this.add.text(200, 100, "Sample Text", {
+    font: "bold 64px Arial",
+    align: "center",
+    color: "white",
+    align: "center"
   });
+  text.setOrigin(0.5);
+  text.alpha = 1;
+  text.visible = 1;
 }
