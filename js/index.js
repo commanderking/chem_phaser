@@ -1,7 +1,12 @@
+const { SODIUM, CHLORINE, FLUORINE } = elements;
+
 var state = {
   atomX: null,
   atomY: null
 };
+
+let atomToTextMap = {};
+
 var config = {
   type: Phaser.AUTO,
   width: 800,
@@ -53,7 +58,7 @@ function create() {
   const sodium = renderAtom({
     name: "sodium",
     color: 0xffffff,
-    diameter: elements.sodium.diameter
+    diameter: SODIUM.diameter
   });
 
   this.atoms = this.add.group([
@@ -80,14 +85,33 @@ function create() {
     }
   ]);
 
+  atomToTextMap[CHLORINE.key] = this.make.text(
+    createAtomTextConfig({ text: "Cl", x: 300, y: 300 })
+  );
+  atomToTextMap[SODIUM.key] = this.make.text(
+    createAtomTextConfig({ text: "Na", x: 100, y: 300 })
+  );
+
+  atomToTextMap[FLUORINE.key] = this.make.text(
+    createAtomTextConfig({ text: "F", x: 200, y: 200 })
+  );
+
   Phaser.Actions.Call(
     this.atoms.getChildren(),
     function(item) {
       item.setInteractive();
       this.input.setDraggable(item);
       item.on("drag", function(pointer, dragX, dragY) {
+        console.log("item", item.texture.key);
+        console.log("atomTextMap", atomToTextMap);
+        console.log(atomToTextMap[item.texture.key]);
         item.x = dragX;
         item.y = dragY;
+
+        atomToTextMap[item.texture.key].x = dragX;
+        atomToTextMap[item.texture.key].y = dragY;
+        // secondText.x = dragX;
+        // secondText.y = dragY;
 
         state.atomX = dragX;
         state.atomY = dragY;
@@ -95,20 +119,6 @@ function create() {
     },
     this
   );
-
-  var config1 = {
-    x: 200,
-    y: 200,
-    text: "Cl",
-    style: {
-      fontSize: "12px",
-      fontFamily: "Arial",
-      color: "#ffffff",
-      align: "center"
-    }
-  };
-
-  secondText = this.make.text(config1);
 
   var text = this.add.text(200, 100, "Sample Text", {
     font: "bold 64px Arial",
