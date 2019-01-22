@@ -1,6 +1,9 @@
 const { SODIUM, CHLORINE, FLUORINE } = elements;
 
-let atomToTextMap = {};
+let state = {
+  atomPositions: {},
+  atomContainers: []
+};
 
 var config = {
   type: Phaser.AUTO,
@@ -64,6 +67,30 @@ function create() {
     return `${atomName}Electron${index}`;
   };
 
+  const createElectronAndAddToContainer = (
+    container,
+    electronNumber,
+    valenceElectrons,
+    radius,
+    key
+  ) => {
+    const electronPosition = getElectronPosition(
+      electronNumber,
+      valenceElectrons,
+      radius
+    );
+    const { x, y } = electronPosition;
+    const electronKey = createElectronTexture(electronNumber, key);
+    let electronSprite = this.add.sprite(x, y, electronKey);
+    electronSprite.setOrigin(0.5, 0.5);
+    electronSprite.setData({
+      valenceElectrons,
+      electronNumber
+    });
+
+    container.add(electronSprite);
+  };
+
   // Renders Atom texture, text, and makes container draggable
   const renderAtomContainer = ({
     key,
@@ -75,7 +102,7 @@ function create() {
   }) => {
     const { x, y } = initPosition;
     const container = this.add.container(x, y);
-    container.key = `${key}Container`;
+    container.setData("atomKey", key);
 
     // Create atom texture
     const atom = renderAtom({
@@ -83,7 +110,7 @@ function create() {
       color: atomColor,
       radius
     });
-    const sodiumSprite = this.add.sprite(0, 0, key);
+    const atomSprite = this.add.sprite(0, 0, key);
 
     // Create and configure text
     const containerText = this.add.text(0, 0, symbol, {
@@ -94,17 +121,17 @@ function create() {
 
     // Create the electrons
     for (let i = 1; i <= valenceElectrons; i++) {
-      const electronPosition = getElectronPosition(i, valenceElectrons, radius);
-      const { x, y } = electronPosition;
-      const electronKey = createElectronTexture(i, key);
-      let electronSprite = this.add.sprite(x, y, electronKey);
-      electronSprite.setOrigin(0.5, 0.5);
-
-      container.add(electronSprite);
+      createElectronAndAddToContainer(
+        container,
+        i,
+        valenceElectrons,
+        radius,
+        key
+      );
     }
 
     // Add everything to container
-    container.add(sodiumSprite);
+    container.add(atomSprite);
     container.add(containerText);
 
     // Making the container draggable
@@ -117,8 +144,78 @@ function create() {
     container.on("drag", function(pointer, dragX, dragY) {
       container.x = dragX;
       container.y = dragY;
+
+      state.atomPositions[key] = {
+        x: dragX,
+        y: dragY
+      };
+      const draggedAtomContainerBounds = container.getBounds();
+
+      // hardcode to sodium for now for testing - will likely need to for loop over this logic
+      const nonDraggedAtomContainer = state.atomContainers[0];
+
+      const intersection = Phaser.Geom.Rectangle.Intersection(
+        draggedAtomContainerBounds,
+        nonDraggedAtomContainer.getBounds()
+      );
+
+      // Logic for if this atom intersects with another atom
+      if (intersection.width !== 0 || intersection.height !== 0) {
+        const nonDraggedAtomContainerChildren = nonDraggedAtomContainer.list;
+        const draggedAtomKey = container.getData("atomKey");
+        // This only finds one electron. We'll need logic to see how many electrons can be donated and
+        // see how many can actually carry over
+        console.log("nonDraggedAtomContainer", nonDraggedAtomContainer);
+        const electronSprite = nonDraggedAtomContainerChildren.find(child => {
+          return (
+            child.type === "Sprite" &&
+            child.texture.key.includes(
+              `${nonDraggedAtomContainer.getData("atomKey")}Electron`
+            )
+          );
+        });
+
+        if (electronSprite) {
+          // Get all electrons that belong to the currently dragged item
+          const electronSprites = container.list.filter(atom => {
+            return (
+              atom.type === "Sprite" &&
+              atom.texture.key.includes(`${draggedAtomKey}Electron`)
+            );
+          });
+          electronSprites.forEach(electron => electron.destroy());
+
+          const atomIndex = state.atomContainers.findIndex(
+            atom => atom.key === draggedAtomKey
+          );
+
+          // TODO: Need to update with correct valence electrons depending on how many electrons
+          // can be pulled off
+          const newNumberOfValenceElectrons = valenceElectrons + 1;
+          const newElectronState = [...state.atomContainers];
+          newElectronState[atomIndex] = {
+            ...newElectronState[atomIndex],
+            valeneceElectrons: newNumberOfValenceElectrons
+          };
+
+          state.atomContainers = newElectronState;
+          for (let i = 1; i <= newNumberOfValenceElectrons; i++) {
+            createElectronAndAddToContainer(
+              container,
+              i,
+              newNumberOfValenceElectrons,
+              16.66,
+              draggedAtomKey
+            );
+          }
+          // destory electron on dragged item
+          electronSprite.destroy();
+        }
+      }
     });
 
+    console.log("container", container);
+    state.atomContainers.push(container);
     return container;
   };
   elementsForActivity.forEach(atom => renderAtomContainer(atom));
