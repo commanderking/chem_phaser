@@ -1,5 +1,3 @@
-const { SODIUM, CHLORINE, FLUORINE } = elements;
-
 let state = {
   atomPositions: {},
   atomContainers: []
@@ -176,7 +174,7 @@ function create() {
         });
 
         if (electronSprite) {
-          // Get all electrons that belong to the currently dragged item
+          // Get all electrons that belong to the currently dragged item and destroy them
           const electronSprites = container.list.filter(atom => {
             return (
               atom.type === "Sprite" &&
@@ -185,12 +183,21 @@ function create() {
           });
           electronSprites.forEach(electron => electron.destroy());
 
-          const atomIndex = state.atomContainers.findIndex(
+          // Get the atom information from the element in the store
+          // Should we just move all the info onto the data part of each sprite?
+          const atomIndex = state.atomContainers.find(
             atom => atom.key === draggedAtomKey
           );
+          console.log("state.atomContainers", state.atomContainers);
+          console.log("atomIndex", atomIndex);
+          const draggedAtom = state.atomContainers.find(
+            atom => atom.key === draggedAtomKey
+          );
+          console.log("draggedAtom", draggedAtom);
 
           // TODO: Need to update with correct valence electrons depending on how many electrons
           // can be pulled off
+          // Updating the state of the dragged item to have the correct number of valece electrons
           const newNumberOfValenceElectrons = valenceElectrons + 1;
           const newElectronState = [...state.atomContainers];
           newElectronState[atomIndex] = {
@@ -198,13 +205,15 @@ function create() {
             valeneceElectrons: newNumberOfValenceElectrons
           };
 
+          // Re-render those electrons on the dragged atom based on the new valence electron state
           state.atomContainers = newElectronState;
+          console.log("container", container);
           for (let i = 1; i <= newNumberOfValenceElectrons; i++) {
             createElectronAndAddToContainer(
               container,
               i,
               newNumberOfValenceElectrons,
-              16.66,
+              16.66, // This is radius for Fluorine, update to be dynamic
               draggedAtomKey
             );
           }
@@ -214,7 +223,6 @@ function create() {
       }
     });
 
-    console.log("container", container);
     state.atomContainers.push(container);
     return container;
   };
